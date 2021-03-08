@@ -1,0 +1,84 @@
+//Test 302
+
+program test302
+
+const int jedan = 1;
+
+int i;
+bool ibool;
+
+int niz[];
+
+{
+	
+	int sum(int z, int d)
+	{
+		return z + d;
+	}
+	
+	int inkrement(int a, int inc) 
+		int pom; 
+	{
+		if(inc == jedan) pom = 1;
+		else if(inc == 2) pom = a;
+
+		return sum(a,pom);
+	}
+	
+	bool verify() {
+		print('v');
+		return false;
+	}	
+	
+	void main()
+	{
+		if(1!=1) print(-6);
+		else print(0);  
+			
+		ibool = false;
+		i = 0;
+		do{
+			if(i == 2) ibool = true;
+			i++;
+		}while(i < 5);
+		
+		if(ibool)
+			if(i == 5) print(1); 
+			else print(-1);
+		
+		niz = new int[3];
+		niz[0] = 1;
+		niz[1] = 2;
+		niz[2] = sum(niz[1], niz[0]) + 1;
+		if(verify() || niz[2] == 4) print(ord('A')); 
+		else print(ord('a'));
+		
+		print(eol);
+		i = 0;
+		do{
+			if(i == 3)
+			{
+				i++;
+				continue;
+			}
+			if(i == 4) break;
+			i = inkrement(i, 1);
+		}while(i < 10);
+		
+		if(i == 3 && verify()) print(-4);
+		else print(4);  
+		
+		read(niz[0]);
+		read(niz[1]);
+		read(niz[2]);
+		print(eol);
+		
+		print(sum (sum(niz[0], niz[1]), niz[2])); 
+			
+		print(eol); 
+		print(inkrement(niz[2], 2));
+		
+		print(verify() ? 't' : 'f');
+	}
+}
+

@@ -1,0 +1,450 @@
+
+
+package rs.ac.bg.etf.pp1;
+
+import java_cup.runtime.*;
+import org.apache.log4j.*;
+import rs.ac.bg.etf.pp1.ast.*;
+
+parser code {:
+
+	boolean errorDetected;
+	Logger log = Logger.getLogger(getClass());
+   
+   
+    // slede redefinisani metodi za prijavu gresaka radi izmene teksta poruke
+     
+    public void report_fatal_error(String message, Object info) throws java.lang.Exception {
+      done_parsing();
+      report_error(message, info);
+    }
+  
+    public void syntax_error(Symbol cur_token) {
+        report_error("\nSintaksna greska", cur_token);
+    }
+  
+    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+    }
+
+    public void report_error(String message, Object info) {
+    	errorDetected = true;
+    	StringBuilder msg = new StringBuilder(message); 
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.error(msg.toString());
+    }
+
+
+:}
+
+init with {:
+	errorDetected = false;
+:}
+
+scan with {:
+	Symbol s = this.getScanner().next_token();
+	if (s != null && s.value != null) 
+		log.info(s.toString() + " " + s.value.toString());
+	return s;
+:}
+
+terminal PROGRAM;
+terminal BREAK;
+terminal CLASS;
+terminal ELSE;
+terminal CONST;
+terminal IF;
+terminal SWITCH;
+terminal DO;
+terminal WHILE;
+terminal NEW;
+terminal PRINT;
+terminal READ;
+terminal RETURN;
+terminal VOID;
+terminal EXTENDS;
+terminal CONTINUE;
+terminal CASE;
+terminal String IDENT ;
+terminal Integer NUMBER ;
+terminal String CHAR ;
+terminal String BOOLEAN ;
+terminal ADD;
+terminal SUB;
+terminal MUL;
+terminal DIV;
+terminal MOD;
+terminal EQ;
+terminal NEQ;
+terminal G;
+terminal GE;
+terminal L;
+terminal LE;
+terminal ANDAND;
+terminal OROR;
+terminal DODELA;
+terminal INC;
+terminal DEC;
+terminal TZ;
+terminal COMMA;
+terminal DOT;
+terminal LZAGRADA;
+terminal DZAGRADA;
+terminal LUGLASTA;
+terminal DUGLASTA;
+terminal LVITICASTA;
+terminal DVITICASTA;
+terminal UPITNIK;
+terminal DVOTACKA;
+terminal ENUM;
+
+
+nonterminal OmniList OmniList ;
+nonterminal VarDeclList VarDeclList ;
+nonterminal VarDecl VarDecl ;
+nonterminal MoreVarList MoreVarList ;
+nonterminal ConstDecl ConstDecl ;
+nonterminal MoreConstList MoreConstList ;
+nonterminal ClassDecl ClassDecl ;
+nonterminal MaybeMethodDecl MaybeMethodDecl ;
+nonterminal MethodDeclList MethodDeclList ;
+nonterminal UglasteFormPars UglasteFormPars ;
+nonterminal MaybeExtendsType MaybeExtendsType ;
+nonterminal MaybeNumCharBool MaybeNumCharBool ;
+nonterminal UglasteList UglasteList ;
+nonterminal FormPars FormPars ;
+nonterminal MaybeFormPars MaybeFormPars ;
+nonterminal Statement Statement ;
+nonterminal MaybeSwitch MaybeSwitch ;
+nonterminal MaybePrint MaybePrint ;
+nonterminal MaybeStatement MaybeStatement ;
+nonterminal MaybeElseStatement MaybeElseStatement ;
+nonterminal DesignatorStatement DesignatorStatement ;
+nonterminal MaybeAssignActAS MaybeAssignActAS ;
+nonterminal ActPars ActPars ;
+nonterminal MaybeZarezExpr MaybeZarezExpr ;
+nonterminal Condition Condition ;
+nonterminal MaybeOrOr MaybeOrOr ;
+nonterminal CondTerm CondTerm ;
+nonterminal MaybeAndAnd MaybeAndAnd ;
+nonterminal MaybeSub MaybeSub ;
+nonterminal DesignatorList DesignatorList ;
+nonterminal MaybeMulopFactor MaybeMulopFactor ;
+nonterminal MaybeNumCharBoolPrvi MaybeNumCharBoolPrvi ;
+nonterminal IzdvojiLzagrad IzdvojiLzagrad ;
+nonterminal PocetakDoWhile PocetakDoWhile ;
+nonterminal PocetakIF PocetakIF ;
+nonterminal MaybeUgExpr MaybeUgExpr ;
+nonterminal MaybeZagrada MaybeZagrada ;
+nonterminal MaybeActPars MaybeActPars ;
+nonterminal Assignop Assignop ;
+nonterminal Relop Relop ;
+nonterminal Addop Addop ;
+nonterminal Mulop Mulop ;
+nonterminal TipTipic TipTipic ;
+nonterminal MulopFactor MulopFactor ;
+nonterminal ElseSmena ElseSmena ;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct UslovTernarni , PrviTernarni , DrugiTernarni , Erroric , VarDeclPrvi , FormParsPrvi ;
+
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ProgName , Program , MethodDecl , MethodTypeName , MethodVoidName , Designator , DesignatorIdent ;
+nonterminal  rs.etf.pp1.symboltable.concepts.Struct Type , Term , Factor , Expr , Expr1 , MaybeAddopTerms , MaybeExpr , MaybeRelopExpr , CondFact ;
+precedence left ELSE;
+
+Program ::= (Program) PROGRAM ProgName:p OmniList:O1 LVITICASTA MethodDeclList:M2 DVITICASTA {: RESULT=new Program(p, O1, M2); RESULT.setLine(pleft); :};
+
+ProgName ::= (ProgName) IDENT:progName {: RESULT=new ProgName(progName); RESULT.setLine(progNameleft); :} ;
+
+
+OmniList ::= (OmniListEConst) OmniList:O1 ConstDecl:C2 {: RESULT=new OmniListEConst(O1, C2); RESULT.setLine(O1left); :} 
+			| 
+			(OmniListEVar) OmniList:O1 VarDecl:V2 {: RESULT=new OmniListEVar(O1, V2); RESULT.setLine(O1left); :}
+			| 
+			(OmniListEClass) OmniList:O1 ClassDecl:C2 {: RESULT=new OmniListEClass(O1, C2); RESULT.setLine(O1left); :}
+			|		
+			(NoMoreOmni) {: RESULT=new NoMoreOmni(); :} /* epsilon */
+			; 
+			
+VarDeclList ::= (VarDeclarations) VarDeclList:V1 VarDecl:V2 {: RESULT=new VarDeclarations(V1, V2); RESULT.setLine(V1left); :}
+			|
+			(NoVarDecl) {: RESULT=new NoVarDecl(); :} /* epsilon */
+			;
+
+
+VarDecl ::= (XVarDecl) TipTipic:T1 VarDeclPrvi:V2 MoreVarList:M3 TZ {: RESULT=new XVarDecl(T1, V2, M3); RESULT.setLine(T1left); :} ;
+			
+VarDeclPrvi ::= (DeklaracijaPrvog) IDENT:I1 UglasteList:U2 {: RESULT=new DeklaracijaPrvog(I1, U2); RESULT.setLine(I1left); :} 
+				|
+				error:her {: parser.report_error("Izvrsen oporavak do , ili ; iz liste u liniji " + herleft ,null);  :} {: RESULT=new VarDeclPrviDerived1(); :} 
+				;
+
+TipTipic ::= (Tipovi) Type:tip {: RESULT=new Tipovi(tip); RESULT.setLine(tipleft); :};
+
+
+MoreVarList ::= (MoreVars) MoreVarList:M1 COMMA IDENT:mvl UglasteList:U2 {: RESULT=new MoreVars(M1, mvl, U2); RESULT.setLine(M1left); :}
+				|
+				(ErorMorVar) MoreVarList:M1 COMMA Erroric:E2 {: RESULT=new ErorMorVar(M1, E2); RESULT.setLine(M1left); :}
+				|
+				(NoMoreVars) {: RESULT=new NoMoreVars(); :} /* epsilon */
+				;
+				
+Erroric ::= (Erroric) error:her {: parser.report_error("MOREVARLIST Izvrsen oporavak do , ili ; iz liste u liniji " + herleft ,null);  :} {: RESULT=new Erroric(); :} ;
+				
+ConstDecl ::= (ConstDecl) CONST TipTipic:T1 IDENT:cdecl DODELA MaybeNumCharBoolPrvi:M2 MoreConstList:M3 TZ {: RESULT=new ConstDecl(T1, cdecl, M2, M3); RESULT.setLine(T1left); :};
+
+MaybeNumCharBoolPrvi ::= (MaybeNumPrvi) NUMBER:nprvi {: RESULT=new MaybeNumPrvi(nprvi); RESULT.setLine(nprvileft); :}
+					|
+					(MaybeCharPrvi) CHAR:charvrednostprvi {: RESULT=new MaybeCharPrvi(charvrednostprvi); RESULT.setLine(charvrednostprvileft); :}
+					|
+					(MaybeBooleanPrvi) BOOLEAN:vrednostbprvi {: RESULT=new MaybeBooleanPrvi(vrednostbprvi); RESULT.setLine(vrednostbprvileft); :}
+					;
+
+MoreConstList ::= (MoreConsts) MoreConstList:M1 COMMA IDENT:mcl DODELA MaybeNumCharBool:M2 {: RESULT=new MoreConsts(M1, mcl, M2); RESULT.setLine(M1left); :}
+				|
+				(NoMoreConsts) {: RESULT=new NoMoreConsts(); :} /* epsilon */
+				;
+
+ClassDecl ::= (ClassDecl) CLASS IDENT:cl MaybeExtendsType:M1 LVITICASTA VarDeclList:V2 MaybeMethodDecl:M3 DVITICASTA {: RESULT=new ClassDecl(cl, M1, V2, M3); RESULT.setLine(clleft); :};
+
+MaybeMethodDecl ::= (XMaybeMethodDecl) LVITICASTA MethodDeclList:M1 DVITICASTA {: RESULT=new XMaybeMethodDecl(M1); RESULT.setLine(M1left); :}
+					|
+					(NotMaybeMethodDecl) {: RESULT=new NotMaybeMethodDecl(); :} /* epsilon */
+					;
+		
+MethodDeclList ::= (XMethodDeclList) MethodDeclList:M1 MethodDecl:M2 {: RESULT=new XMethodDeclList(M1, M2); RESULT.setLine(M1left); :}
+			|
+			(NoMethodDeclList) {: RESULT=new NoMethodDeclList(); :} /* epsilon */
+			;
+
+MethodDecl ::= (MethodDeclType) MethodTypeName:M1 LZAGRADA UglasteFormPars:U2 DZAGRADA VarDeclList:V3 LVITICASTA MaybeStatement:M4 DVITICASTA {: RESULT=new MethodDeclType(M1, U2, V3, M4); RESULT.setLine(M1left); :}
+				|
+				(MethodDeclVoid) MethodVoidName:M1 LZAGRADA UglasteFormPars:U2 DZAGRADA VarDeclList:V3 LVITICASTA MaybeStatement:M4 DVITICASTA {: RESULT=new MethodDeclVoid(M1, U2, V3, M4); RESULT.setLine(M1left); :}
+				;
+				
+MethodTypeName ::= (MethodTypeName) Type:retType IDENT:mdname {: RESULT=new MethodTypeName(retType, mdname); RESULT.setLine(retTypeleft); :} ;
+MethodVoidName ::= (MethodVoidName) VOID IDENT:mdvoid {: RESULT=new MethodVoidName(mdvoid); RESULT.setLine(mdvoidleft); :} ;
+
+UglasteFormPars ::= (XUglasteFormPars) FormPars:F1 {: RESULT=new XUglasteFormPars(F1); RESULT.setLine(F1left); :}
+					|
+					(NotUglasteFormPars) {: RESULT=new NotUglasteFormPars(); :} /* epsilon */
+					;
+
+MaybeExtendsType ::= (XMaybeExtendsType) EXTENDS Type:T1 {: RESULT=new XMaybeExtendsType(T1); RESULT.setLine(T1left); :}
+					|
+					(NotMaybeExtendsType) {: RESULT=new NotMaybeExtendsType(); :} /* epsilon */
+					;
+
+MaybeNumCharBool ::= (MaybeNum) NUMBER:n {: RESULT=new MaybeNum(n); RESULT.setLine(nleft); :}
+					|
+					(MaybeChar) CHAR:charvrednost {: RESULT=new MaybeChar(charvrednost); RESULT.setLine(charvrednostleft); :}
+					|
+					(MaybeBoolean) BOOLEAN:vrednostb {: RESULT=new MaybeBoolean(vrednostb); RESULT.setLine(vrednostbleft); :}
+					;
+					
+UglasteList ::= (Uglaste) LUGLASTA DUGLASTA {: RESULT=new Uglaste(); :}
+			|
+			(NoUglasta) {: RESULT=new NoUglasta(); :} /* epsilon */
+			;
+			
+FormPars ::= (FormPars) TipTipic:T1 FormParsPrvi:F2 MaybeFormPars:M3 {: RESULT=new FormPars(T1, F2, M3); RESULT.setLine(T1left); :};
+
+FormParsPrvi ::= (PrvakFormA) IDENT:formpars UglasteList:U1 {: RESULT=new PrvakFormA(formpars, U1); RESULT.setLine(formparsleft); :} ;
+
+MaybeFormPars ::= (XMaybeFormPars) MaybeFormPars:M1 COMMA TipTipic:T2 IDENT:mformpars UglasteList:U3 {: RESULT=new XMaybeFormPars(M1, T2, mformpars, U3); RESULT.setLine(M1left); :}
+				|
+				(NotMaybeFormPars) {: RESULT=new NotMaybeFormPars(); :} /* epsilon */
+				;
+			
+Statement ::= (StatementDesignator) DesignatorStatement:D1 TZ {: RESULT=new StatementDesignator(D1); RESULT.setLine(D1left); :}
+			| 
+			(StatementIf) PocetakIF:P1 LZAGRADA Condition:C2 DZAGRADA Statement:S3 MaybeElseStatement:M4 {: RESULT=new StatementIf(P1, C2, S3, M4); RESULT.setLine(P1left); :}
+			|
+			(StatementDoWhile) PocetakDoWhile:P1 Statement:S2 WHILE LZAGRADA Condition:C3 DZAGRADA TZ {: RESULT=new StatementDoWhile(P1, S2, C3); RESULT.setLine(P1left); :}
+			|
+			(StatementSwitch) SWITCH LZAGRADA Expr:E1 DZAGRADA LVITICASTA MaybeSwitch:M2 DVITICASTA {: RESULT=new StatementSwitch(E1, M2); RESULT.setLine(E1left); :}
+			|
+			(StatementBreak) BREAK TZ {: RESULT=new StatementBreak(); :}
+			|
+			(StatementContinue) CONTINUE TZ {: RESULT=new StatementContinue(); :}
+			|
+			(StatementReturn) RETURN MaybeExpr:M1 TZ {: RESULT=new StatementReturn(M1); RESULT.setLine(M1left); :}
+			|
+			(StatementRead) READ LZAGRADA Designator:D1 DZAGRADA TZ {: RESULT=new StatementRead(D1); RESULT.setLine(D1left); :}
+			|
+			(StatementPrint) PRINT LZAGRADA Expr:E1 MaybePrint:M2 DZAGRADA TZ {: RESULT=new StatementPrint(E1, M2); RESULT.setLine(E1left); :}
+			|
+			(StatementStatement) LVITICASTA MaybeStatement:M1 DVITICASTA {: RESULT=new StatementStatement(M1); RESULT.setLine(M1left); :}
+			;	
+			
+PocetakDoWhile ::= (PocDoWh) DO {: RESULT=new PocDoWh(); :} ;
+PocetakIF ::= (Smenasaifom) IF {: RESULT=new Smenasaifom(); :} ;
+			
+MaybeSwitch ::= (XMaybeSwitch) MaybeSwitch:M1 CASE NUMBER:N2 DVOTACKA MaybeStatement:M3 {: RESULT=new XMaybeSwitch(M1, N2, M3); RESULT.setLine(M1left); :}
+			|
+			(NotMaybeSwitch) {: RESULT=new NotMaybeSwitch(); :} /* epsilon */
+			;
+
+MaybePrint ::= (XMaybePrint) COMMA NUMBER:N1 {: RESULT=new XMaybePrint(N1); RESULT.setLine(N1left); :}
+				|
+				(NotMaybePrint) {: RESULT=new NotMaybePrint(); :} /* epsilon */
+				;
+
+MaybeStatement ::= (XMaybeStatement) MaybeStatement:M1 Statement:S2 {: RESULT=new XMaybeStatement(M1, S2); RESULT.setLine(M1left); :}
+				|
+				(NotMaybeStatement) {: RESULT=new NotMaybeStatement(); :} /* epsilon */
+				;
+			
+MaybeElseStatement ::= (XMaybeElseStatement) ElseSmena:E1 Statement:S2 {: RESULT=new XMaybeElseStatement(E1, S2); RESULT.setLine(E1left); :}
+					|
+					(NotMaybeElseStatement) {: RESULT=new NotMaybeElseStatement(); :} /* epsilon */
+					;
+					
+ElseSmena ::= (ElseSmena) ELSE {: RESULT=new ElseSmena(); :} ;
+			
+DesignatorStatement ::= (DesStatAssign) Designator:dest Assignop:A1 Expr:e {: RESULT=new DesStatAssign(dest, A1, e); RESULT.setLine(destleft); :} 
+					| 
+					(DesStatMayActPars) Designator:D1 LZAGRADA MaybeActPars:M2 DZAGRADA {: RESULT=new DesStatMayActPars(D1, M2); RESULT.setLine(D1left); :} 
+					|
+					(DesStatINC) Designator:D1 INC {: RESULT=new DesStatINC(D1); RESULT.setLine(D1left); :} 
+					|
+					(DesStatDEC) Designator:D1 DEC {: RESULT=new DesStatDEC(D1); RESULT.setLine(D1left); :} 
+					|
+					(ErrorDesign) Designator:dest Assignop:A1 Erroric:E2 {: RESULT=new ErrorDesign(dest, A1, E2); RESULT.setLine(destleft); :}
+					;
+					
+		
+ActPars ::= (ActPars) Expr:E1 MaybeZarezExpr:M2 {: RESULT=new ActPars(E1, M2); RESULT.setLine(E1left); :};
+
+MaybeZarezExpr ::= (XMaybeZarezExpr) MaybeZarezExpr:M1 COMMA Expr:E2 {: RESULT=new XMaybeZarezExpr(M1, E2); RESULT.setLine(M1left); :}
+				|
+				(NotMaybeZarezExpr) {: RESULT=new NotMaybeZarezExpr(); :} /* epsilon */
+				;
+			
+Condition ::= (Condition) CondTerm:C1 MaybeOrOr:M2 {: RESULT=new Condition(C1, M2); RESULT.setLine(C1left); :};
+
+MaybeOrOr ::= (XMaybeOrOr) MaybeOrOr:M1 OROR CondTerm:C2 {: RESULT=new XMaybeOrOr(M1, C2); RESULT.setLine(M1left); :}
+			|
+			(NotMaybeOrOr) {: RESULT=new NotMaybeOrOr(); :} /* epsilon */
+			;
+			
+CondTerm ::= (CondTerm) CondFact:C1 MaybeAndAnd:M2 {: RESULT=new CondTerm(C1, M2); RESULT.setLine(C1left); :};
+
+MaybeAndAnd ::= (XMaybeAndAnd) MaybeAndAnd:M1 ANDAND CondFact:C2 {: RESULT=new XMaybeAndAnd(M1, C2); RESULT.setLine(M1left); :}
+			|
+			(NotMaybeAndAnd) {: RESULT=new NotMaybeAndAnd(); :} /* epsilon */
+			;
+			
+CondFact ::= (CondFact) Expr:E1 MaybeRelopExpr:M2 {: RESULT=new CondFact(E1, M2); RESULT.setLine(E1left); :};
+
+MaybeRelopExpr ::= (XMaybeRelopExpr) Relop:R1 Expr:E2 {: RESULT=new XMaybeRelopExpr(R1, E2); RESULT.setLine(R1left); :}
+				|
+				(NotMaybeRE) {: RESULT=new NotMaybeRE(); :} /* epsilon */
+				;
+
+Expr ::= (ExprZiza1) UslovTernarni:U1 UPITNIK PrviTernarni:P2 DVOTACKA DrugiTernarni:D3 {: RESULT=new ExprZiza1(U1, P2, D3); RESULT.setLine(U1left); :}
+			|
+			(ExprZiza2) Expr1:E1 {: RESULT=new ExprZiza2(E1); RESULT.setLine(E1left); :}
+			;	
+
+UslovTernarni ::= (UslovTernarni) Expr1:E1 {: RESULT=new UslovTernarni(E1); RESULT.setLine(E1left); :} ;
+
+PrviTernarni ::= (PrviTernarni) Expr1:E1 {: RESULT=new PrviTernarni(E1); RESULT.setLine(E1left); :} ;
+
+DrugiTernarni ::= (DrugiTernarni) Expr1:E1 {: RESULT=new DrugiTernarni(E1); RESULT.setLine(E1left); :} ;
+
+Expr1 ::= (Expr1) MaybeSub:M1 Term:T2 MaybeAddopTerms:M3 {: RESULT=new Expr1(M1, T2, M3); RESULT.setLine(M1left); :};
+
+
+MaybeAddopTerms ::= (XMaybeAddopTerms) MaybeAddopTerms:M1 Addop:A2 Term:T3 {: RESULT=new XMaybeAddopTerms(M1, A2, T3); RESULT.setLine(M1left); :}
+					|
+					(NoMaybeAT) {: RESULT=new NoMaybeAT(); :} /* epsilon */
+					;
+
+MaybeSub ::= (XMaybeSub) SUB {: RESULT=new XMaybeSub(); :}
+			|
+			(NotMaybeSub) {: RESULT=new NotMaybeSub(); :} /* epsilon */ 
+			;
+
+Type ::= (Type) IDENT:typeName {: RESULT=new Type(typeName); RESULT.setLine(typeNameleft); :};
+
+Designator ::= (Designator) DesignatorIdent:D1 DesignatorList:D2 {: RESULT=new Designator(D1, D2); RESULT.setLine(D1left); :};
+
+DesignatorIdent ::= (DesigIdent) IDENT:designatorName {: RESULT=new DesigIdent(designatorName); RESULT.setLine(designatorNameleft); :} ;
+
+DesignatorList ::= (XDesignatorList1) DesignatorList:D1 DOT IDENT:designatorlist {: RESULT=new XDesignatorList1(D1, designatorlist); RESULT.setLine(D1left); :}
+				|
+				(XDesignatorList2) DesignatorList:D1 LUGLASTA Expr:E2 DUGLASTA {: RESULT=new XDesignatorList2(D1, E2); RESULT.setLine(D1left); :}
+				|
+				(NoDesignatorList) {: RESULT=new NoDesignatorList(); :} /* epsilon */
+				;
+				
+Term ::= (Term) Factor:F1 MaybeMulopFactor:M2 {: RESULT=new Term(F1, M2); RESULT.setLine(F1left); :};
+
+MaybeMulopFactor ::= (XMaybeMulopFactor) MaybeMulopFactor:M1 MulopFactor:M2 {: RESULT=new XMaybeMulopFactor(M1, M2); RESULT.setLine(M1left); :}
+					|
+					(NotMMFactor) {: RESULT=new NotMMFactor(); :} /* epsilon */
+					;
+				
+MulopFactor ::= (MulopFactor) Mulop:M1 Factor:F2 {: RESULT=new MulopFactor(M1, F2); RESULT.setLine(M1left); :} ;
+
+Factor ::= (FactorDesignator) Designator:D1 MaybeZagrada:M2 {: RESULT=new FactorDesignator(D1, M2); RESULT.setLine(D1left); :}
+			|
+			(FactorNumConst) NUMBER:N1 {: RESULT=new FactorNumConst(N1); RESULT.setLine(N1left); :}
+			|
+			(FactorCharConst) CHAR:C1 {: RESULT=new FactorCharConst(C1); RESULT.setLine(C1left); :}
+			|
+			(FactorBooleanConst) BOOLEAN:boolic {: RESULT=new FactorBooleanConst(boolic); RESULT.setLine(boolicleft); :}
+			|
+			(FactorNEW) NEW Type:T1 MaybeUgExpr:M2 {: RESULT=new FactorNEW(T1, M2); RESULT.setLine(T1left); :}
+			|
+			(FactorExpr) IzdvojiLzagrad:I1 Expr:E2 DZAGRADA {: RESULT=new FactorExpr(I1, E2); RESULT.setLine(I1left); :}
+			;
+			
+IzdvojiLzagrad ::= (Izdvojenalzagrada) LZAGRADA {: RESULT=new Izdvojenalzagrada(); :} ;
+			
+MaybeUgExpr ::= (XMaybeUgExpr) LUGLASTA Expr:E1 DUGLASTA {: RESULT=new XMaybeUgExpr(E1); RESULT.setLine(E1left); :}
+			 |
+			 (NotMaybeUgExpr) {: RESULT=new NotMaybeUgExpr(); :} /* epsilon */
+			 ;
+MaybeExpr ::= (XMaybeExpr) Expr:E1 {: RESULT=new XMaybeExpr(E1); RESULT.setLine(E1left); :} 
+			 |
+			 (NotMaybeExpr) {: RESULT=new NotMaybeExpr(); :} /* epsilon */
+			 ;
+MaybeZagrada ::= (XMaybeZagrada) LZAGRADA MaybeActPars:M1 DZAGRADA {: RESULT=new XMaybeZagrada(M1); RESULT.setLine(M1left); :}
+				|
+				(NotMaybeZagrada) {: RESULT=new NotMaybeZagrada(); :} /* epsilon */
+				;
+
+MaybeActPars ::= (XMaybeActPars) ActPars:A1 {: RESULT=new XMaybeActPars(A1); RESULT.setLine(A1left); :}
+				|
+				(NotMaybeActPars) {: RESULT=new NotMaybeActPars(); :} /* epsilon */
+				;
+
+Assignop ::= (Jednakost) DODELA {: RESULT=new Jednakost(); :};
+
+Relop ::=(Eq) EQ {: RESULT=new Eq(); :}
+		| 
+		(Neq) NEQ {: RESULT=new Neq(); :}
+		| 
+		(G) G {: RESULT=new G(); :}
+		| 
+		(Ge) GE {: RESULT=new Ge(); :}
+		| 
+		(L) L {: RESULT=new L(); :}
+		| 
+		(Le) LE {: RESULT=new Le(); :}
+		;
+
+Addop ::= (Add) ADD {: RESULT=new Add(); :}
+		| 
+		(Sub) SUB {: RESULT=new Sub(); :}
+		;
+
+Mulop ::= (Mul) MUL {: RESULT=new Mul(); :}
+		| 
+		(Div) DIV {: RESULT=new Div(); :}
+		| 
+		(Mod) MOD {: RESULT=new Mod(); :}
+		;
+		
+
